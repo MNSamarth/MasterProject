@@ -2,10 +2,11 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "@/components/Container";
 import { projects, type Project } from "@/content/projects";
 
-/* ── Per-project gradient visuals ──────────────────────── */
+/* ── Per-project gradient fallback ──────────────────────── */
 const VISUALS: Record<string, string> = {
   "promptquest":        "linear-gradient(145deg, oklch(0.16 0.26 285) 0%, oklch(0.11 0.16 248) 100%)",
   "eventsearch":        "linear-gradient(145deg, oklch(0.14 0.22 198) 0%, oklch(0.16 0.18 162) 100%)",
@@ -24,14 +25,14 @@ const SMALL_ACCENTS = [
   "linear-gradient(to right, oklch(0.55 0.20 325), oklch(0.60 0.22 285))",
 ];
 
-/* ── Gradient project visual (replaces photos) ──────────── */
-function ProjectVisual({ slug, title }: { slug: string; title: string }) {
+/* ── Project visual: screenshot + gradient fallback ─────── */
+function ProjectVisual({ slug, title, imageSrc }: { slug: string; title: string; imageSrc?: string }) {
   const gradient = VISUALS[slug] ?? VISUALS["promptquest"];
   const initials = title.split(" ").map((w) => w[0]).slice(0, 3).join("").toUpperCase();
 
   return (
-    <div className="relative aspect-[16/9] w-full overflow-hidden select-none">
-      {/* Gradient base */}
+    <div className="relative aspect-[16/9] w-full overflow-hidden select-none group/visual">
+      {/* Gradient base (always shown) */}
       <div className="absolute inset-0" style={{ background: gradient }} />
 
       {/* Subtle grid texture */}
@@ -44,29 +45,31 @@ function ProjectVisual({ slug, title }: { slug: string; title: string }) {
         }}
       />
 
-      {/* Glow orb top-right */}
-      <div
-        className="absolute -top-12 -right-12 h-56 w-56 rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 70%)" }}
-      />
+      {/* Glow orbs */}
+      <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 70%)" }} />
+      <div className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full"  style={{ background: "radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)" }} />
 
-      {/* Glow orb bottom-left */}
-      <div
-        className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)" }}
-      />
+      {/* Monogram watermark (shown when no image, or image loading) */}
+      {!imageSrc && (
+        <div className="absolute bottom-1 right-4 font-black text-white/[0.07] leading-none" style={{ fontSize: "5.5rem", letterSpacing: "-0.04em" }}>
+          {initials}
+        </div>
+      )}
 
-      {/* Monogram watermark */}
-      <div
-        className="absolute bottom-1 right-4 font-black text-white/[0.07] leading-none"
-        style={{ fontSize: "5.5rem", letterSpacing: "-0.04em" }}
-      >
-        {initials}
-      </div>
+      {/* Screenshot — fades in on top of gradient */}
+      {imageSrc && (
+        <Image
+          src={imageSrc}
+          alt={title}
+          fill
+          className="object-cover opacity-0 group-hover/visual:opacity-100 transition-opacity duration-500"
+          sizes="(max-width: 1024px) 100vw, 50vw"
+        />
+      )}
 
       {/* Bottom fade to card */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 z-[1]"
         style={{
           background:
             "linear-gradient(to bottom, transparent 48%, color-mix(in oklch, var(--card) 96%, transparent) 100%)",
@@ -77,30 +80,18 @@ function ProjectVisual({ slug, title }: { slug: string; title: string }) {
 }
 
 /* ── Tilt + spotlight card wrapper ─────────────────────── */
-function TiltCard({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function TiltCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    const cx   = rect.left + rect.width  / 2;
-    const cy   = rect.top  + rect.height / 2;
-    const dx   = (e.clientX - cx) / (rect.width  / 2);
-    const dy   = (e.clientY - cy) / (rect.height / 2);
-
+    const dx   = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+    const dy   = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
     el.style.transform = `perspective(900px) rotateX(${-dy * 3.5}deg) rotateY(${dx * 3.5}deg) scale(1.012)`;
-
-    const mx = ((e.clientX - rect.left) / rect.width)  * 100;
-    const my = ((e.clientY - rect.top)  / rect.height) * 100;
-    el.style.setProperty("--mx", `${mx}%`);
-    el.style.setProperty("--my", `${my}%`);
+    el.style.setProperty("--mx", `${((e.clientX - rect.left) / rect.width)  * 100}%`);
+    el.style.setProperty("--my", `${((e.clientY - rect.top)  / rect.height) * 100}%`);
   };
 
   const handleMouseLeave = () => {
@@ -126,19 +117,13 @@ function TiltCard({
 function FeaturedCard({ p }: { p: Project }) {
   return (
     <TiltCard className="overflow-hidden rounded-2xl border border-foreground/12 bg-card">
-      {/* Gradient visual */}
-      <ProjectVisual slug={p.slug} title={p.title} />
+      <ProjectVisual slug={p.slug} title={p.title} imageSrc={p.imageSrc} />
 
-      {/* Content */}
       <div className="relative z-[2] p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-semibold tracking-tight text-foreground">
-              {p.title}
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-foreground/65 text-pretty">
-              {p.summary}
-            </p>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground">{p.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-foreground/65 text-pretty">{p.summary}</p>
           </div>
           {p.year && (
             <span
@@ -154,46 +139,36 @@ function FeaturedCard({ p }: { p: Project }) {
           )}
         </div>
 
-        {/* Stack tags */}
         {p.stack && p.stack.length > 0 && (
           <div className="mt-4 flex flex-wrap gap-1.5">
             {p.stack.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-foreground/12 bg-foreground/5 px-3 py-0.5 text-[0.7rem] text-foreground/72"
-              >
+              <span key={t} className="rounded-full border border-foreground/12 bg-foreground/5 px-3 py-0.5 text-[0.7rem] text-foreground/72">
                 {t}
               </span>
             ))}
           </div>
         )}
 
-        {/* Links */}
         <div className="mt-6 flex items-center gap-4 text-sm">
-          <Link
-            href={`/projects/${p.slug}`}
-            className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline"
-          >
+          <Link href={`/projects/${p.slug}`} className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline">
             Case study
           </Link>
-          {p.liveUrl && (
-            <a
-              href={p.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+          {p.demoUrl && (
+            <Link
+              href={`/projects/${p.slug}`}
               className="font-semibold underline-offset-4 transition hover:underline"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent-2)" }}
             >
+              Live demo ↗
+            </Link>
+          )}
+          {p.liveUrl && (
+            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline-offset-4 transition hover:underline" style={{ color: "var(--accent)" }}>
               Live ↗
             </a>
           )}
           {p.repoUrl && (
-            <a
-              href={p.repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline"
-            >
+            <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline">
               GitHub
             </a>
           )}
@@ -209,32 +184,19 @@ function SmallCard({ p, index }: { p: Project; index: number }) {
   return (
     <TiltCard className="h-full rounded-2xl border border-foreground/12 bg-card p-5">
       <div className="relative z-[2] flex flex-col h-full">
-        {/* Accent bar */}
-        <div
-          className="h-[2px] w-10 rounded-full mb-4 shrink-0"
-          style={{ background: accent }}
-        />
+        <div className="h-[2px] w-10 rounded-full mb-4 shrink-0" style={{ background: accent }} />
 
         <div className="flex items-start justify-between gap-3">
-          <h4 className="text-sm font-semibold tracking-tight text-foreground leading-snug">
-            {p.title}
-          </h4>
-          {p.year && (
-            <span className="shrink-0 text-[0.65rem] text-foreground/45 mt-0.5">{p.year}</span>
-          )}
+          <h4 className="text-sm font-semibold tracking-tight text-foreground leading-snug">{p.title}</h4>
+          {p.year && <span className="shrink-0 text-[0.65rem] text-foreground/45 mt-0.5">{p.year}</span>}
         </div>
 
-        <p className="mt-2.5 text-sm leading-6 text-foreground/62 text-pretty flex-1">
-          {p.summary}
-        </p>
+        <p className="mt-2.5 text-sm leading-6 text-foreground/62 text-pretty flex-1">{p.summary}</p>
 
         {p.stack && p.stack.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {p.stack.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-foreground/10 bg-foreground/4 px-2.5 py-0.5 text-[0.65rem] text-foreground/65"
-              >
+            {p.stack.slice(0, 3).map((t) => (
+              <span key={t} className="rounded-full border border-foreground/10 bg-foreground/4 px-2.5 py-0.5 text-[0.65rem] text-foreground/65">
                 {t}
               </span>
             ))}
@@ -242,19 +204,11 @@ function SmallCard({ p, index }: { p: Project; index: number }) {
         )}
 
         <div className="mt-4 flex items-center gap-4">
-          <Link
-            href={`/projects/${p.slug}`}
-            className="text-[0.78rem] text-foreground/60 underline-offset-4 transition hover:text-foreground hover:underline"
-          >
+          <Link href={`/projects/${p.slug}`} className="text-[0.78rem] text-foreground/60 underline-offset-4 transition hover:text-foreground hover:underline">
             Case study
           </Link>
           {p.repoUrl && (
-            <a
-              href={p.repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[0.78rem] text-foreground/60 underline-offset-4 transition hover:text-foreground hover:underline"
-            >
+            <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-[0.78rem] text-foreground/60 underline-offset-4 transition hover:text-foreground hover:underline">
               GitHub
             </a>
           )}
@@ -272,7 +226,6 @@ export function ProjectsSection() {
   return (
     <section id="projects">
       <Container className="py-20 sm:py-28">
-        {/* Header */}
         <div className="mb-12 reveal" data-reveal data-visible="false">
           <span className="section-label">Selected work</span>
           <h2 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
@@ -280,19 +233,14 @@ export function ProjectsSection() {
             <span className="text-foreground">that ship</span>
           </h2>
           <p className="mt-4 max-w-xl text-foreground/60 leading-7">
-            High-signal work with crisp outcomes and production intent — from AI/ML systems to full-stack products.
+            High-signal work with crisp outcomes — from AI/ML systems to full-stack products. Hover cards to preview.
           </p>
         </div>
 
         {/* Featured 2-col grid */}
         <div className="grid gap-5 lg:grid-cols-2">
           {featured.map((p) => (
-            <div
-              key={p.slug}
-              className="reveal"
-              data-reveal
-              data-visible="false"
-            >
+            <div key={p.slug} className="reveal" data-reveal data-visible="false">
               <FeaturedCard p={p} />
             </div>
           ))}
