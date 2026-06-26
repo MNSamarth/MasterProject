@@ -1,0 +1,22 @@
+{
+  "name": "websites",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Portfolio monorepo (portfolio + project apps)",
+  "scripts": {
+    "dev": "npm run dev -w portfolio",
+    "build": "npm run build -w portfolio",
+    "start": "npm run start -w portfolio",
+    "lint": "npm run lint -w portfolio",
+    "dev:all": "turbo dev",
+    "build:all": "turbo build",
+    "lint:all": "turbo lint"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  }
+}
