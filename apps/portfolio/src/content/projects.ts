@@ -32,6 +32,7 @@ export const projects: Project[] = [
     year: "2026",
     stack: ["Next.js", "Full-Stack", "LLM Integration", "Cloud Deployment"],
     repoUrl: "https://github.com/MNSamarth/PromptQuest",
+    liveUrl: "https://prompt-quest-theta.vercel.app/",
     imageSrc: "/images/PromptQuest.png",
     featured: true,
     caseStudy: {

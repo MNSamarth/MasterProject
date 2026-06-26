@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Container } from "@/components/Container";
 import { projects, type Project } from "@/content/projects";
+import { useViewer } from "@/components/ProjectViewer";
 
 /* ── Per-project gradient fallback ──────────────────────── */
 const VISUALS: Record<string, string> = {
@@ -115,6 +116,9 @@ function TiltCard({ children, className = "" }: { children: React.ReactNode; cla
 
 /* ── Featured project card ──────────────────────────────── */
 function FeaturedCard({ p }: { p: Project }) {
+  const { open } = useViewer();
+  const hasLive = !!(p.liveUrl || p.demoUrl);
+
   return (
     <TiltCard className="overflow-hidden rounded-2xl border border-foreground/12 bg-card">
       <ProjectVisual slug={p.slug} title={p.title} imageSrc={p.imageSrc} />
@@ -150,25 +154,29 @@ function FeaturedCard({ p }: { p: Project }) {
         )}
 
         <div className="mt-6 flex items-center gap-4 text-sm">
-          <Link href={`/projects/${p.slug}`} className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline">
+          {/* Launch App — opens full-screen viewer */}
+          {hasLive && (
+            <button
+              onClick={() => open(p)}
+              className="inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-semibold text-white transition-all hover:scale-[1.03] hover:brightness-110"
+              style={{
+                background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)",
+                boxShadow: "0 0 18px color-mix(in oklch, var(--accent) 22%, transparent)",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Launch App
+            </button>
+          )}
+
+          <Link href={`/projects/${p.slug}`} className="text-foreground/60 underline-offset-4 transition hover:text-foreground hover:underline text-sm">
             Case study
           </Link>
-          {p.demoUrl && (
-            <Link
-              href={`/projects/${p.slug}`}
-              className="font-semibold underline-offset-4 transition hover:underline"
-              style={{ color: "var(--accent-2)" }}
-            >
-              Live demo ↗
-            </Link>
-          )}
-          {p.liveUrl && (
-            <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline-offset-4 transition hover:underline" style={{ color: "var(--accent)" }}>
-              Live ↗
-            </a>
-          )}
+
           {p.repoUrl && (
-            <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-foreground/65 underline-offset-4 transition hover:text-foreground hover:underline">
+            <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-foreground/55 underline-offset-4 transition hover:text-foreground hover:underline text-sm">
               GitHub
             </a>
           )}

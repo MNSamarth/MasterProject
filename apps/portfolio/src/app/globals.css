@@ -1,54 +1,56 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   LIGHT MODE — default
+═══════════════════════════════════════════ */
 :root {
-  /* Core palette — deep dark, editorial */
-  --background: oklch(0.09 0.018 262);
-  --foreground: oklch(0.97 0.008 252);
-  --muted: oklch(0.62 0.025 258);
-  --card: oklch(0.13 0.02 260);
-  --card-2: oklch(0.17 0.022 260);
+  --background:  oklch(0.978 0.005 252);
+  --foreground:  oklch(0.13  0.012 260);
+  --muted:       oklch(0.50  0.018 258);
+  --card:        oklch(1     0     0);
+  --card-2:      oklch(0.960 0.006 252);
 
-  /* Accent system */
-  --accent: oklch(0.64 0.25 272);
-  --accent-2: oklch(0.76 0.17 198);
-  --accent-dim: oklch(0.45 0.18 272);
+  --accent:      oklch(0.54  0.25  272);
+  --accent-2:    oklch(0.60  0.18  198);
+  --accent-dim:  oklch(0.42  0.18  272);
+
+  color-scheme: light;
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE — applied via html.dark class
+═══════════════════════════════════════════ */
+html.dark {
+  --background:  oklch(0.09  0.018 262);
+  --foreground:  oklch(0.97  0.008 252);
+  --muted:       oklch(0.62  0.025 258);
+  --card:        oklch(0.13  0.02  260);
+  --card-2:      oklch(0.17  0.022 260);
+
+  --accent:      oklch(0.64  0.25  272);
+  --accent-2:    oklch(0.76  0.17  198);
+  --accent-dim:  oklch(0.45  0.18  272);
+
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-card: var(--card);
-  --color-card-2: var(--card-2);
-  --color-accent: var(--accent);
-  --color-accent-2: var(--accent-2);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: oklch(0.985 0.006 250);
-    --foreground: oklch(0.19 0.01 250);
-    --muted: oklch(0.53 0.02 250);
-    --card: oklch(0.995 0.004 250);
-    --card-2: oklch(0.975 0.006 250);
-  }
-}
-
-html {
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  html { color-scheme: light; }
+  --color-foreground:  var(--foreground);
+  --color-muted:       var(--muted);
+  --color-card:        var(--card);
+  --color-card-2:      var(--card-2);
+  --color-accent:      var(--accent);
+  --color-accent-2:    var(--accent-2);
+  --font-sans:         var(--font-geist-sans);
+  --font-mono:         var(--font-geist-mono);
 }
 
 /* ── Custom scrollbar ── */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in oklch, var(--accent) 55%, var(--card-2));
+  background: color-mix(in oklch, var(--accent) 45%, var(--card-2));
   border-radius: 2px;
 }
 
@@ -58,29 +60,39 @@ body {
   background-image:
     radial-gradient(
       ellipse 80% 55% at 72% -2%,
-      color-mix(in oklch, var(--accent) 11%, transparent) 0%,
+      color-mix(in oklch, var(--accent) 8%, transparent) 0%,
       transparent 52%
     ),
     radial-gradient(
       ellipse 55% 45% at 8% 100%,
-      color-mix(in oklch, var(--accent-2) 9%, transparent) 0%,
+      color-mix(in oklch, var(--accent-2) 7%, transparent) 0%,
       transparent 52%
     );
   background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 350ms ease, color 350ms ease;
 }
 
-/* ── Noise overlay ── */
+/* ── Noise overlay (lighter in light mode) ── */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 999;
+  opacity: 0.025;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+}
+html.dark body::before {
   opacity: 0.038;
   mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+}
+
+/* ── Light mode: card shadows instead of hard borders ── */
+html:not(.dark) .card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
 }
 
 /* ── Reveal on scroll ── */
@@ -89,9 +101,9 @@ body::before {
   transform: translateY(22px);
   filter: blur(7px);
   transition:
-    opacity 850ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 850ms cubic-bezier(0.16, 1, 0.3, 1),
-    filter 650ms cubic-bezier(0.16, 1, 0.3, 1);
+    opacity     850ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform   850ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter      650ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 .reveal[data-visible="true"] {
@@ -142,7 +154,7 @@ body::before {
   inset: 0;
   background: radial-gradient(
     260px circle at var(--mx) var(--my),
-    color-mix(in oklch, var(--accent) 9%, transparent),
+    color-mix(in oklch, var(--accent) 8%, transparent),
     transparent 68%
   );
   border-radius: inherit;
@@ -158,10 +170,10 @@ body::before {
   transition: border-color 280ms, box-shadow 280ms;
 }
 .glow-border:hover {
-  border-color: color-mix(in oklch, var(--accent) 38%, transparent) !important;
+  border-color: color-mix(in oklch, var(--accent) 32%, transparent) !important;
   box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--accent) 10%, transparent),
-    0 8px 36px color-mix(in oklch, var(--accent) 9%, transparent);
+    0 0 0 1px color-mix(in oklch, var(--accent) 8%, transparent),
+    0 8px 36px color-mix(in oklch, var(--accent) 8%, transparent);
 }
 
 /* ── Marquee ── */
@@ -178,12 +190,8 @@ body::before {
 
 /* ── Timeline dot ── */
 @keyframes dot-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 color-mix(in oklch, var(--accent) 45%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 7px color-mix(in oklch, var(--accent) 0%, transparent);
-  }
+  0%, 100% { box-shadow: 0 0 0 0   color-mix(in oklch, var(--accent) 45%, transparent); }
+  50%       { box-shadow: 0 0 0 7px color-mix(in oklch, var(--accent)  0%, transparent); }
 }
 .timeline-dot {
   width: 10px;
@@ -221,9 +229,16 @@ body::before {
 .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hidden::-webkit-scrollbar { display: none; }
 
+/* ── Theme toggle pill ── */
+@keyframes theme-toggle-slide {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal       { opacity: 1; transform: none; filter: none; transition: none; }
+  .reveal        { opacity: 1; transform: none; filter: none; transition: none; }
   .marquee-track { animation: none; }
-  .timeline-dot { animation: none; }
+  .timeline-dot  { animation: none; }
   .scroll-bounce { animation: none; }
+  body           { transition: none; }
 }
