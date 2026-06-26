@@ -8,43 +8,64 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { Project } from "@/content/projects";
+import { projects, type Project } from "@/content/projects";
+
+/* ── URL helpers ─────────────────────────────────────── */
+function setAppParam(slug: string | null) {
+  const url = new URL(window.location.href);
+  if (slug) {
+    url.searchParams.set("app", slug);
+  } else {
+    url.searchParams.delete("app");
+  }
+  history.replaceState(null, "", url.toString());
+}
+
+function getAppParam(): Project | null {
+  const slug = new URLSearchParams(window.location.search).get("app");
+  if (!slug) return null;
+  return projects.find((p) => p.slug === slug && (p.liveUrl || p.demoUrl)) ?? null;
+}
 
 /* ── Context ─────────────────────────────────────────── */
-type ViewerCtx = {
-  open: (project: Project) => void;
-  close: () => void;
-};
-
+type ViewerCtx = { open: (project: Project) => void; close: () => void };
 const Ctx = createContext<ViewerCtx>({ open: () => {}, close: () => {} });
 export const useViewer = () => useContext(Ctx);
 
 /* ── Provider + Overlay ──────────────────────────────── */
 export function ProjectViewerProvider({ children }: { children: ReactNode }) {
   const [project, setProject] = useState<Project | null>(null);
-  const [visible, setVisible]  = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  /* Restore from URL on first mount */
+  useEffect(() => {
+    const p = getAppParam();
+    if (p) {
+      setProject(p);
+      requestAnimationFrame(() => setVisible(true));
+    }
+  }, []);
 
   const open = useCallback((p: Project) => {
     setProject(p);
-    // small tick so CSS transition fires
+    setAppParam(p.slug);
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
   const close = useCallback(() => {
     setVisible(false);
+    setAppParam(null);
     setTimeout(() => setProject(null), 400);
   }, []);
 
-  /* Close on Escape */
+  /* Escape key */
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [close]);
 
-  /* Lock body scroll while open */
+  /* Lock body scroll while viewer is open */
   useEffect(() => {
     document.body.style.overflow = project ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -78,7 +99,7 @@ export function ProjectViewerProvider({ children }: { children: ReactNode }) {
               backdropFilter: "blur(16px)",
             }}
           >
-            {/* Close */}
+            {/* Back / Close */}
             <button
               onClick={close}
               className="flex items-center gap-2 rounded-full border border-foreground/15 bg-card px-3 py-1.5 text-xs font-medium text-foreground/70 transition hover:text-foreground hover:border-foreground/30"
@@ -89,13 +110,10 @@ export function ProjectViewerProvider({ children }: { children: ReactNode }) {
               Back
             </button>
 
-            {/* Divider */}
             <div className="h-5 w-px" style={{ background: "color-mix(in oklch, var(--foreground) 12%, transparent)" }} />
 
-            {/* Project name */}
             <span className="text-sm font-semibold text-foreground tracking-tight">{project.title}</span>
 
-            {/* Stack tags */}
             <div className="hidden sm:flex gap-1.5">
               {project.stack?.slice(0, 3).map((t) => (
                 <span
@@ -107,10 +125,8 @@ export function ProjectViewerProvider({ children }: { children: ReactNode }) {
               ))}
             </div>
 
-            {/* Spacer */}
             <div className="flex-1" />
 
-            {/* External link */}
             {src && (
               <a
                 href={src}
